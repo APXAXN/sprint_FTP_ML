@@ -87,7 +87,9 @@ def load_metrics():
         p = RESULTS_DIR / f"metrics_{fs}.csv"
         if p.exists():
             df = pd.read_csv(p)
-            df.insert(0, "feature_set", fs)
+            # CSV may already contain a feature_set column (written by run_pipeline.py)
+            if "feature_set" not in df.columns:
+                df.insert(0, "feature_set", fs)
             dfs.append(df)
     return pd.concat(dfs, ignore_index=True) if dfs else pd.DataFrame()
 
