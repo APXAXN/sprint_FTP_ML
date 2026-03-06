@@ -83,7 +83,9 @@ def eda_plots(df_raw: pd.DataFrame):
 def train_primary(df_engineered: pd.DataFrame):
     """Train all 7 models on sprint_bio (primary feature set)."""
     print("\n── Primary training: sprint_bio — all 7 models ─────────────────")
-    results = run_all_models("sprint_bio", skip_nn=False, verbose=True)
+    print("   Target: log(FTP) — metrics back-transformed to watts")
+    results = run_all_models("sprint_bio", skip_nn=False, verbose=True,
+                             log_target=True)
     return results
 
 
@@ -196,7 +198,7 @@ def run_ablation(primary_results: dict):
 
     for fs in FEATURE_SETS.keys():
         print(f"\n  Feature set: {fs}")
-        res = run_all_models(fs, skip_nn=True, verbose=True)
+        res = run_all_models(fs, skip_nn=True, verbose=True, log_target=True)
         ablation[fs] = {
             name: d for name, d in res.items()
             if name != "__meta__"

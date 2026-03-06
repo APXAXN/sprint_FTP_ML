@@ -80,7 +80,22 @@ class SprintFeatureEngineer:
         df_out["sprint_wpk_15s"] = df_out["15s_critical_power"] / wt
         df_out["sprint_wpk_30s"] = df_out["30s_critical_power"] / wt
 
-        # ── 7. Drop redundant / out-of-scope columns ──────────────────────────
+        # ── 7. Ramp-rate features (absolute W/s power drop) ──────────────────
+        # Complements decay *ratios* by capturing the *magnitude* of fatigue.
+        # A sprinter with 1 000 W peak and a 300 W rider can share the same
+        # early_decay ratio but very different absolute ramps.
+        df_out["ramp_1to5_wps"]   = (df_out["1s_critical_power"]  - df_out["5s_critical_power"])  / 4
+        df_out["ramp_5to15_wps"]  = (df_out["5s_critical_power"]  - df_out["15s_critical_power"]) / 10
+        df_out["ramp_15to30_wps"] = (df_out["15s_critical_power"] - df_out["30s_critical_power"]) / 15
+
+        # ── 8. Power-law exponent ─────────────────────────────────────────────
+        # Sprint power follows P(t) ≈ P₁ · t^(−k).  Solving for k with t=30:
+        #   k = log(P₁ / P₃₀) / log(30)
+        # Large k → fast decay (sprinter physiology).
+        # Small k → slow decay (aerobic engine even in sprint range).
+        df_out["power_law_exp"] = np.log(p1s / p30s) / np.log(30)
+
+        # ── 9. Drop redundant / out-of-scope columns ──────────────────────────
         drop = [c for c in self._COLS_TO_DROP if c in df_out.columns]
         df_out = df_out.drop(columns=drop)
 

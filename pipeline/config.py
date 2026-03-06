@@ -53,6 +53,14 @@ ENGINEERED_COLS = [
     "sprint_wpk_30s",      # 30s / weightkg
 ]
 
+# ── Ramp-rate feature names (computed in features.py) ─────────────────────
+RAMP_COLS = [
+    "ramp_1to5_wps",       # (P1 - P5) / 4   — W/s drop, 1s→5s
+    "ramp_5to15_wps",      # (P5 - P15) / 10  — W/s drop, 5s→15s
+    "ramp_15to30_wps",     # (P15 - P30) / 15 — W/s drop, 15s→30s
+    "power_law_exp",       # log(P1/P30) / log(30) — overall decay exponent
+]
+
 # ── Feature sets (ablation study) ─────────────────────────────────────────
 FEATURE_SETS = {
     # Baseline: raw sprint power only
@@ -63,6 +71,9 @@ FEATURE_SETS = {
 
     # + athlete biometrics  ← PRIMARY MODEL SET
     "sprint_bio": SPRINT_COLS + ENGINEERED_COLS + BIOMETRIC_COLS,
+
+    # + ramp-rate / power-law features (experiment 3)
+    "sprint_bio_v2": SPRINT_COLS + ENGINEERED_COLS + RAMP_COLS + BIOMETRIC_COLS,
 
     # Ceiling: what sub-max features give us (not the thesis claim, just reference)
     "full_submax": SPRINT_COLS + ENGINEERED_COLS + BIOMETRIC_COLS + SUBMAX_COLS,
