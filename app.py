@@ -41,7 +41,7 @@ st.set_page_config(
 )
 
 st.sidebar.title("Sprint FTP ML")
-st.sidebar.caption("MSIS 522 · UW Foster School of Business")
+st.sidebar.caption("Ultrathon.io")
 st.sidebar.markdown("---")
 st.sidebar.markdown(
     "**Data**: GoldenCheetah OpenData (n = 4,768)  \n"
