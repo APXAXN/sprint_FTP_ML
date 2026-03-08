@@ -107,13 +107,26 @@ def load_xgb_scaler_features():
 @st.cache_data(show_spinner=False)
 def load_shap_data():
     """
-    Load test set features + Random Forest model, compute SHAP values.
-    Returns (shap_explanation, feat_names, y_test_w, y_pred_w).
+    Load pre-computed SHAP values from disk (fast path), or recompute if missing.
+    Returns (shap_explanation, feat_names, y_test_w, y_pred_w), or (None, str_error, None, None).
     """
     try:
         import sys; sys.path.insert(0, str(BASE_DIR))
         import shap
 
+        # ── Fast path: load pre-computed SHAP values (~instant) ───────────────
+        sv_path = MODELS_DIR / "shap_values_sprint_bio.joblib"
+        if sv_path.exists():
+            saved = joblib.load(sv_path)
+            sv = shap.Explanation(
+                values=saved["values"],
+                base_values=saved["base_values"],
+                data=saved["data"],
+                feature_names=saved["feat_names"],
+            )
+            return sv, saved["feat_names"], saved["y_test_w"], saved["y_pred_w"]
+
+        # ── Slow path: recompute from scratch (~45s) ───────────────────────────
         buf = io.StringIO()
         with contextlib.redirect_stdout(buf):
             from pipeline.data_loader import load_and_prepare
@@ -122,7 +135,6 @@ def load_shap_data():
 
         rf_pipe = joblib.load(MODELS_DIR / "RandomForest_sprint_bio.joblib")
         rf_est  = rf_pipe.named_steps["model"]
-
         X_test_sc  = rf_pipe.named_steps["scaler"].transform(X_test)
         X_train_sc = rf_pipe.named_steps["scaler"].transform(X_train)
 
@@ -139,7 +151,8 @@ def load_shap_data():
         y_test_w = np.exp(y_test)
         return sv, feat_names, y_test_w, y_pred_w
     except Exception as e:
-        return None, None, None, None
+        import traceback
+        return None, str(e) + "\n" + traceback.format_exc(), None, None
 
 
 @st.cache_data(show_spinner=False)
@@ -1417,7 +1430,10 @@ with tab4:
             shap_vals, feat_names, y_test_w, y_pred_w = load_shap_data()
 
         if shap_vals is None:
-            st.error("Could not load SHAP data. Ensure pipeline has been run and models are saved.")
+            st.error(
+                "Could not load SHAP data. Ensure pipeline has been run and models are saved.\n\n"
+                + (f"**Error**: `{feat_names}`" if isinstance(feat_names, str) else "")
+            )
         else:
             import shap as shap_lib
 
