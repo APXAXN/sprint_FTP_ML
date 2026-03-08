@@ -81,16 +81,18 @@ def load_sprint_bio_predictions():
 
 @st.cache_resource
 def load_all_sklearn_models():
-    """Load saved sprint_bio sklearn model objects."""
-    out = {}
+    """Load saved sprint_bio sklearn model objects. Returns (models_dict, errors_dict)."""
+    out, errs = {}, {}
     for name in ["Linear", "Ridge", "Lasso", "DecisionTree", "RandomForest", "XGBoost"]:
         p = MODELS_DIR / f"{name}_sprint_bio.joblib"
-        if p.exists():
-            try:
-                out[name] = joblib.load(p)
-            except Exception:
-                pass
-    return out
+        if not p.exists():
+            errs[name] = f"File not found: {p}"
+            continue
+        try:
+            out[name] = joblib.load(p)
+        except Exception as e:
+            errs[name] = str(e)
+    return out, errs
 
 
 @st.cache_resource
@@ -841,7 +843,15 @@ with tab3:
     sb = all_metrics[all_metrics["feature_set"] == "sprint_bio"].copy() \
          if not all_metrics.empty else pd.DataFrame()
     pred_df = load_sprint_bio_predictions()
-    ml      = load_all_sklearn_models()
+    ml, ml_errs = load_all_sklearn_models()
+
+    if ml_errs:
+        with st.expander(f"Model load warnings ({len(ml_errs)} issue(s))", expanded=True):
+            for name, err in ml_errs.items():
+                st.warning(f"**{name}**: {err}")
+    if not ml:
+        st.error("No models loaded. Check that `outputs/models/` files are present and committed.")
+        st.stop()
 
     SPRINT_BIO_FEATS = [
         "1s_critical_power", "5s_critical_power", "10s_critical_power",
@@ -1071,7 +1081,7 @@ with tab3:
                 except Exception as e:
                     st.warning(f"Could not read DT params: {e}")
             else:
-                st.caption("DecisionTree model not found.")
+                st.warning(f"DecisionTree model not loaded. {ml_errs.get('DecisionTree', 'File missing.')}")
         with col_m2:
             st.markdown("**Test-Set Metrics**")
             _metrics_card("DecisionTree")
@@ -1137,7 +1147,7 @@ with tab3:
                 except Exception as e:
                     st.warning(f"Could not read RF params: {e}")
             else:
-                st.caption("RandomForest model not found.")
+                st.warning(f"RandomForest model not loaded. {ml_errs.get('RandomForest', 'File missing.')}")
         with col_m3:
             st.markdown("**Test-Set Metrics**")
             _metrics_card("RandomForest")
@@ -1194,7 +1204,7 @@ with tab3:
                 except Exception as e:
                     st.warning(f"Could not read XGBoost params: {e}")
             else:
-                st.caption("XGBoost model not found.")
+                st.warning(f"XGBoost model not loaded. {ml_errs.get('XGBoost', 'File missing.')}")
         with col_m4:
             st.markdown("**Test-Set Metrics**")
             _metrics_card("XGBoost")
@@ -1608,7 +1618,7 @@ with tab4:
             "A SHAP waterfall plot is computed for tree-based models."
         )
 
-        ml_models = load_all_sklearn_models()
+        ml_models, _ = load_all_sklearn_models()
         pop_medians, feat_names_list = get_pop_medians()
 
         if not ml_models:
