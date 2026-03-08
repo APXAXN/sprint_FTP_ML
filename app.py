@@ -276,7 +276,7 @@ tab1, tab2, tab3, tab4 = st.tabs([
 with tab1:
     st.title("Can a 30-Second Sprint Predict Your FTP?")
     st.markdown(
-        "##### A machine learning study of 4,768 cyclists · MSIS 522 · UW Foster School of Business"
+        "##### A machine learning study of 4,768 cyclists · Ultrathon.io"
     )
     st.markdown("---")
 
