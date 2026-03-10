@@ -16,6 +16,10 @@ gc_data/
 # ── Derived raw data (reproducible from scripts) ────────────────────
 data_inspection/athletes_full_raw.csv
 
+# ── Dashboard (React/Vite) ───────────────────────────────────────────
+dashboard/node_modules/
+dashboard/.vercel/
+
 # ── macOS ───────────────────────────────────────────────────────────
 .DS_Store
 **/.DS_Store
